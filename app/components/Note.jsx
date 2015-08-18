@@ -33,6 +33,7 @@ export default class Note extends React.Component {
 		}
 	}
 	finishEdit(e){
+		console.log(e.target.value)
 		this.props.onEdit(e.target.value);
 		this.setState({editing:false});
 	}
