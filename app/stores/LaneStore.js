@@ -2,6 +2,7 @@ import uuid from 'node-uuid';
 import alt from '../libs/alt';
 import LaneActions from '../actions/LaneActions';
 import NoteStore from './NoteStore';
+import update from 'react/lib/update';
 
 class LaneStore{
 	constructor(){
@@ -35,6 +36,42 @@ class LaneStore{
 			lanes:lanes.concat(lane)
 		})
 	}
+	move({sourceNote, targetNote}) {
+		// get all lanes
+	    const lanes = this.lanes;
+	    const sourceId = sourceNote.id;
+	    const targetId = targetNote.id;
+	    // get source and target lane /
+	    const sourceLane = lanes.filter((lane) => {
+	      return lane.notes.indexOf(sourceId) >= 0;
+	    })[0];
+	    const targetLane = lanes.filter((lane) => {
+	      return lane.notes.indexOf(targetId) >= 0;
+	    })[0];
+	    const sourceNoteIndex = sourceLane.notes.indexOf(sourceId);
+	    const targetNoteIndex = targetLane.notes.indexOf(targetId);
+
+	    if(sourceLane === targetLane) {
+	      // move at once to avoid complications
+	      // if in one lane change the positionn 
+	      sourceLane.notes = update(sourceLane.notes, {
+	        $splice: [
+	          [sourceNoteIndex, 1],
+	          [targetNoteIndex, 0, sourceId]
+	        ]
+	      });
+	    }
+	    else {
+	      // get rid of the source
+	      sourceLane.notes.splice(sourceNoteIndex, 1);
+
+	      // and move it to target
+	      targetLane.notes.splice(targetNoteIndex, 0, sourceId);
+	    }
+
+	    this.setState({lanes});
+	  
+	}
 	attachToLane({laneId,noteId}){
 		//如果没有note 那么从store中拿一个
 
@@ -50,6 +87,9 @@ class LaneStore{
 		if(targetId < 0 ){
 			return ;
 		}
+
+
+    	this.removeNote(noteId);
 		//如果找到了 找到其中有没有这个note 如果没有则加入
 		const lane = lanes[targetId];
 		if(lane.notes.indexOf(noteId)===-1){
@@ -58,6 +98,21 @@ class LaneStore{
 		}else{
 			console.warn("Already attached ",lanes)
 		}
+	}
+	removeNote(noteId) {
+	    const lanes = this.lanes;
+	    const removeLane = lanes.filter((lane) => {
+	      return lane.notes.indexOf(noteId) >= 0;
+	    })[0];
+
+	    if(!removeLane) {
+	      return;
+	    }
+
+	    const removeNoteIndex = removeLane.notes.indexOf(noteId);
+
+	    removeLane.notes = removeLane.notes.slice(0, removeNoteIndex).
+	      concat(removeLane.notes.slice(removeNoteIndex + 1));
 	}
 	detachFromLane({laneId,noteId}){
 
